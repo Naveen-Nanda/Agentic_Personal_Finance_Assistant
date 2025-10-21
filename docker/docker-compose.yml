@@ -26,7 +26,7 @@ services:
   
   llm:
     profiles: ["gpu"]
-    image: nvcr.io/nim/llama-3.1-nemotron-nano-8b-v1:latest
+    image: nvcr.io/nim/nvidia/llama-3.1-nemotron-nano-8b-v1:latest
     container_name: llm
     runtime: nvidia
     deploy:
@@ -41,7 +41,7 @@ services:
 
   emb:
     profiles: ["gpu"]
-    image: nvcr.io/nim/nv-embedqa-e5-v5:latest
+    image: nvcr.io/nim/nvidia/nv-embedqa-e5-v5:1
     container_name: emb
     runtime: nvidia
     deploy:
