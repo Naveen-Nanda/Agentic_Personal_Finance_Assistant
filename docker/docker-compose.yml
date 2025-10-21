@@ -23,6 +23,37 @@ services:
       NIM_EMB_URL: ${NIM_EMB_URL}
     depends_on: [pg]
     ports: ["${ORCH_PORT}:5000"]
+  
+  llm:
+    profiles: ["gpu"]
+    image: nvcr.io/nim/llama-3.1-nemotron-nano-8b-v1:latest
+    container_name: llm
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+    environment:
+      NIM_LOG_LEVEL: info
+    ports:
+      - "8002:8000"   # host→container (optional, for debugging)
+
+  emb:
+    profiles: ["gpu"]
+    image: nvcr.io/nim/nv-embedqa-e5-v5:latest
+    container_name: emb
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+    environment:
+      NIM_LOG_LEVEL: info
+    ports:
+      - "8001:8000"   # host→container (optional, for debugging)
+
 
 volumes:
   pgdata:
