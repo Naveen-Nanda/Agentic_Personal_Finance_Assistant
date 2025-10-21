@@ -126,33 +126,6 @@ Response:
 
 ---
 
-## 🏗️ Roadmap
 
-- [x] Local Docker Compose setup  
-- [x] Orchestrator API (FastAPI)  
-- [x] Vector DB + embedding ingestion  
-- [ ] Angular UI integration  
-- [ ] EKS deployment with NIM services  
-- [ ] Observability + metrics  
-- [ ] Demo polish and submission docs  
 
----
 
-## 🤝 Contributing
-
-Pull requests are welcome.  
-To contribute:
-
-```bash
-git checkout -b feature/my-feature
-git commit -m "Add my feature"
-git push origin feature/my-feature
-```
-
----
-
-## ⚖️ License
-
-MIT License © 2025
-
----
