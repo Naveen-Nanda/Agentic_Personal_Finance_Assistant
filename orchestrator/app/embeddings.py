@@ -19,5 +19,3 @@ def embed_texts(texts: List[str]) -> List[List[float]]:
     )
     r.raise_for_status()
     return [d["embedding"] for d in r.json()["data"]]
-
-# hello
