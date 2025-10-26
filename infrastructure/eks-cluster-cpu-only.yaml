@@ -1,0 +1,19 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: finx-cluster
+  region: us-east-1
+  version: "1.31"
+
+managedNodeGroups:
+  - name: cpu-ng
+    instanceType: t3.medium
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 2
+    labels:
+      node-type: cpu
+    tags:
+      Owner: you
+      Project: finx-hackathon
