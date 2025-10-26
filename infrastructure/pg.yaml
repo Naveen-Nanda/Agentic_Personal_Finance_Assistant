@@ -67,3 +67,5 @@ spec:
   ports:
     - port: 5432
       targetPort: 5432
+
+## we dont have the AWS EBS CSI driver so gp2 PVCs bind wont have persistent storage. remember that
