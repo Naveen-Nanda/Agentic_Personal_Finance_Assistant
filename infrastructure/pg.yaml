@@ -1,17 +1,76 @@
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: pg-data
-  labels:
-    app: pg
-spec:
-  accessModes: ["ReadWriteOnce"]
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: gp2
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: pg-data
+#   labels:
+#     app: pg
+# spec:
+#   accessModes: ["ReadWriteOnce"]
+#   resources:
+#     requests:
+#       storage: 10Gi
+#   storageClassName: gp2
 
----
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: pg
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: pg
+#   template:
+#     metadata:
+#       labels:
+#         app: pg
+#     spec:
+#       nodeSelector:
+#         node-type: cpu
+#       containers:
+#         - name: pg
+#           image: postgres:16
+#           env:
+#             - name: POSTGRES_USER
+#               value: postgres
+#             - name: POSTGRES_PASSWORD
+#               value: postgres
+#             - name: POSTGRES_DB
+#               value: finx
+#           ports:
+#             - containerPort: 5432
+#           volumeMounts:
+#             - name: pg-data
+#               mountPath: /var/lib/postgresql/data
+#           resources:
+#             requests:
+#               cpu: "250m"
+#               memory: "512Mi"
+#             limits:
+#               cpu: "500m"
+#               memory: "1Gi"
+#       volumes:
+#         - name: pg-data
+#           persistentVolumeClaim:
+#             claimName: pg-data
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: pg
+# spec:
+#   type: ClusterIP
+#   selector:
+#     app: pg
+#   ports:
+#     - port: 5432
+#       targetPort: 5432
+
+# ## we dont have the AWS EBS CSI driver so gp2 PVCs bind wont have persistent storage. remember that
+
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,8 +85,12 @@ spec:
       labels:
         app: pg
     spec:
+      # If your node actually has this label, leave it.
+      # If your node does NOT have node-type=cpu when you run `kubectl get nodes --show-labels`,
+      # then delete the nodeSelector block entirely before applying. Notes for Nanda 
       nodeSelector:
         node-type: cpu
+
       containers:
         - name: pg
           image: postgres:16
@@ -50,22 +113,19 @@ spec:
             limits:
               cpu: "500m"
               memory: "1Gi"
+
       volumes:
         - name: pg-data
-          persistentVolumeClaim:
-            claimName: pg-data
-
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: pg
 spec:
-  type: ClusterIP
   selector:
     app: pg
+  type: ClusterIP
   ports:
     - port: 5432
       targetPort: 5432
-
-## we dont have the AWS EBS CSI driver so gp2 PVCs bind wont have persistent storage. remember that
