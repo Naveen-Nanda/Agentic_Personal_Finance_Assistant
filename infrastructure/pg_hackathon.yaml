@@ -19,7 +19,7 @@ spec:
 
       containers:
         - name: pg
-          image: ankane/pgvector:pg16   # <-- this is the important change
+          image: pgvector/pgvector:pg16   # this is the important change
           env:
             - name: POSTGRES_USER
               value: postgres
