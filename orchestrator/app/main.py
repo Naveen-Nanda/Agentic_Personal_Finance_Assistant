@@ -10,7 +10,7 @@ import math
 import random
 import hashlib
 
-app = FastAPI(title="FinX Orchestrator")
+app = FastAPI(title="APFA Orchestrator")
 
 SIM_MODE = os.environ.get("SIM_MODE", "true").lower() == "true"
 DB_URL = os.environ.get(
@@ -24,7 +24,11 @@ def get_db_conn():
 def ensure_tables():
     conn = get_db_conn()
     cur = conn.cursor()
-    # documents table with pgvector column
+
+    # 1. make sure pgvector is enabled in this DB
+    cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+
+    # 2. documents table (stores perks / offers / guidance snippets)
     cur.execute("""
     CREATE TABLE IF NOT EXISTS documents (
         id SERIAL PRIMARY KEY,
@@ -33,6 +37,8 @@ def ensure_tables():
         embedding vector(384)
     );
     """)
+
+    # 3. plans table (stores generated advice for auditing / history)
     cur.execute("""
     CREATE TABLE IF NOT EXISTS plans (
         id SERIAL PRIMARY KEY,
@@ -41,9 +47,11 @@ def ensure_tables():
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
     """)
+
     conn.commit()
     cur.close()
     conn.close()
+
 
 ensure_tables()
 
