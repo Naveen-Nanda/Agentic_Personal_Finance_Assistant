@@ -11,7 +11,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 
-# defaults for local/dev
 ENV SIM_MODE=true
 ENV DB_URL=postgresql://postgres:postgres@pg:5432/postgres
 
