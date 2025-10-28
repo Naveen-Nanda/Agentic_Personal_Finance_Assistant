@@ -1,4 +1,4 @@
-# FinX Hackathon Project (CPU-Only Demo Ready)
+# APFA Hackathon Project (CPU-Only Demo Ready)
 
 This repo gives you:
 - `orchestrator/`: FastAPI service (`/api/v1/analyze`) that builds a personalized financial plan
