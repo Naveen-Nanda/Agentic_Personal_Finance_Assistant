@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orchestrator
+  namespace: finance
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orchestrator
+  template:
+    metadata:
+      labels:
+        app: orchestrator
+    spec:
+      nodeSelector:
+        node-type: cpu
+      containers:
+        - name: orchestrator
+          image: <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/finx-orchestrator:latest
+          imagePullPolicy: Always
+          env:
+            - name: SIM_MODE
+              value: "true"
+            - name: DB_URL
+              value: "postgresql://postgres:postgres@pg.finance.svc.cluster.local:5432/finx"
+            - name: NIM_LLM_URL
+              value: "http://llm.finance.svc.cluster.local:8000"
+            - name: NIM_EMB_URL
+              value: "http://emb.finance.svc.cluster.local:8000"
+            - name: REQUEST_TIMEOUT
+              value: "60"
+            - name: TOP_K
+              value: "6"
+          ports:
+            - containerPort: 5000
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orchestrator
+  namespace: finance
+spec:
+  selector:
+    app: orchestrator
+  ports:
+    - port: 5000
+      targetPort: 5000
+  type: LoadBalancer

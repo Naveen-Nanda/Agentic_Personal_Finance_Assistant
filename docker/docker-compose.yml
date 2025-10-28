@@ -1,59 +1,56 @@
 version: "3.9"
 services:
   pg:
-    image: ankane/pgvector:latest
-    container_name: pg
-    env_file: ./.env
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    ports: ["${POSTGRES_PORT}:5432"]
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   orchestrator:
-    build: ../orchestrator
-    container_name: orchestrator
-    env_file: ./.env
+    build:
+      context: ..
+      dockerfile: orchestrator/Dockerfile
     environment:
-      DB_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pg:5432/${POSTGRES_DB}
       SIM_MODE: ${SIM_MODE}
+      DB_URL: ${DB_URL}
       NIM_LLM_URL: ${NIM_LLM_URL}
       NIM_EMB_URL: ${NIM_EMB_URL}
-    depends_on: [pg]
-    ports: ["${ORCH_PORT}:5000"]
-  
+      REQUEST_TIMEOUT: ${REQUEST_TIMEOUT}
+      TOP_K: ${TOP_K}
+    depends_on:
+      - pg
+    ports:
+      - "5000:5000"
+
+  # GPU services (placeholders - only run when you have GPU runtime available)
   llm:
-    profiles: ["gpu"]
-    image: nvcr.io/nim/nvidia/llama-3.1-nemotron-nano-8b-v1:latest
-    container_name: llm
-    runtime: nvidia
+    image: nvcr.io/nim/llama-3.1-nemotron-nano-8b-v1:latest
     deploy:
       resources:
         reservations:
           devices:
-            - capabilities: ["gpu"]
-    environment:
-      NIM_LOG_LEVEL: info
+            - driver: nvidia
+              count: all
+              capabilities: ["gpu"]
     ports:
-      - "8002:8000"   # host→container (optional, for debugging)
+      - "8002:8000"
 
   emb:
-    profiles: ["gpu"]
-    image: nvcr.io/nim/nvidia/nv-embedqa-e5-v5:1
-    container_name: emb
-    runtime: nvidia
+    image: nvcr.io/nim/nv-embedqa-e5-v5:latest
     deploy:
       resources:
         reservations:
           devices:
-            - capabilities: ["gpu"]
-    environment:
-      NIM_LOG_LEVEL: info
+            - driver: nvidia
+              count: all
+              capabilities: ["gpu"]
     ports:
-      - "8001:8000"   # host→container (optional, for debugging)
-
+      - "8001:8000"
 
 volumes:
   pgdata:
