@@ -21,14 +21,48 @@ DB_URL = os.environ.get(
 def get_db_conn():
     return psycopg2.connect(DB_URL)
 
+# def ensure_tables():
+#     conn = get_db_conn()
+#     cur = conn.cursor()
+
+#     # 1. make sure pgvector is enabled in this DB
+#     cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+
+#     # 2. documents table (stores perks / offers / guidance snippets)
+#     cur.execute("""
+#     CREATE TABLE IF NOT EXISTS documents (
+#         id SERIAL PRIMARY KEY,
+#         title TEXT,
+#         body TEXT,
+#         embedding vector(384)
+#     );
+#     """)
+
+#     # 3. plans table (stores generated advice for auditing / history)
+#     cur.execute("""
+#     CREATE TABLE IF NOT EXISTS plans (
+#         id SERIAL PRIMARY KEY,
+#         user_input JSONB,
+#         plan_text TEXT,
+#         created_at TIMESTAMPTZ DEFAULT NOW()
+#     );
+#     """)
+
+#     conn.commit()
+#     cur.close()
+#     conn.close()
+
+
+# ensure_tables()
+
 def ensure_tables():
     conn = get_db_conn()
     cur = conn.cursor()
 
-    # 1. make sure pgvector is enabled in this DB
+    # enable pgvector
     cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
 
-    # 2. documents table (stores perks / offers / guidance snippets)
+    # documents table
     cur.execute("""
     CREATE TABLE IF NOT EXISTS documents (
         id SERIAL PRIMARY KEY,
@@ -38,7 +72,7 @@ def ensure_tables():
     );
     """)
 
-    # 3. plans table (stores generated advice for auditing / history)
+    # plans table
     cur.execute("""
     CREATE TABLE IF NOT EXISTS plans (
         id SERIAL PRIMARY KEY,
@@ -53,7 +87,6 @@ def ensure_tables():
     conn.close()
 
 
-ensure_tables()
 
 class SpendingModel(BaseModel):
     __root__: Dict[str, float]
@@ -169,12 +202,48 @@ def persist_plan(req: AnalyzeRequest, plan_text: str):
     conn.close()
     return plan_id
 
+# @app.get("/healthz")
+# def healthz():
+#     return {"ok": True, "sim_mode": SIM_MODE}
+
+# @app.post("/api/v1/analyze", response_model=AnalyzeResponse)
+# def analyze(req: AnalyzeRequest):
+#     try:
+#         retrieved = get_top_docs(
+#             user_query=" ".join(req.financial_goals + req.credit_cards)
+#         )
+#         prompt = create_prompt(req, retrieved)
+#         plan_text = generate_plan(prompt)
+#         plan_id = persist_plan(req, plan_text)
+
+#         return AnalyzeResponse(
+#             plan=plan_text,
+#             debug={
+#                 "plan_id": plan_id,
+#                 "sim_mode": SIM_MODE,
+#                 "retrieved_docs_count": len(retrieved),
+#             }
+#         )
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/healthz")
 def healthz():
-    return {"ok": True, "sim_mode": SIM_MODE}
+    # try to make sure DB is ready, but don't crash the app if it isn't yet
+    try:
+        ensure_tables()
+        db_ok = True
+    except Exception as e:
+        db_ok = False
+    return {"ok": True, "db_ok": db_ok, "sim_mode": SIM_MODE}
+
 
 @app.post("/api/v1/analyze", response_model=AnalyzeResponse)
 def analyze(req: AnalyzeRequest):
+    # make sure tables exist before we actually query/insert
+    ensure_tables()
+
     try:
         retrieved = get_top_docs(
             user_query=" ".join(req.financial_goals + req.credit_cards)
