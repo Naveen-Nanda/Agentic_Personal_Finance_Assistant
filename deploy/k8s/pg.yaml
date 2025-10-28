@@ -1,3 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: finance
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,33 +18,24 @@ spec:
       labels:
         app: pg
     spec:
-      nodeSelector:
-        node-type: cpu
       containers:
-        - name: pg
-          image: pgvector/pgvector:pg16
-          env:
-            - name: POSTGRES_USER
-              value: postgres
-            - name: POSTGRES_PASSWORD
-              value: postgres
-            - name: POSTGRES_DB
-              value: finx
-          ports:
-            - containerPort: 5432
-          volumeMounts:
-            - name: pg-data
-              mountPath: /var/lib/postgresql/data
-          resources:
-            requests:
-              cpu: "250m"
-              memory: "512Mi"
-            limits:
-              cpu: "500m"
-              memory: "1Gi"
-      volumes:
+      - name: pg
+        image: pgvector/pgvector:pg16
+        env:
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "postgres"
+        - name: POSTGRES_DB
+          value: "postgres"
+        ports:
+        - containerPort: 5432
+        volumeMounts:
         - name: pg-data
-          emptyDir: {}
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: pg-data
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -49,7 +45,8 @@ metadata:
 spec:
   selector:
     app: pg
-  type: ClusterIP
   ports:
-    - port: 5432
-      targetPort: 5432
+  - port: 5432
+    targetPort: 5432
+    name: postgres
+  type: ClusterIP

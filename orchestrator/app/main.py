@@ -1,331 +1,187 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-from typing import Dict, List, Optional, Any
+from typing import List, Dict, Any
 import os
-import uuid
 import psycopg2
 import psycopg2.extras
 import json
+import datetime
 import math
-import requests
+import random
+import hashlib
 
-app = FastAPI(
-    title="Agentic Personal Finance Orchestrator",
-    description="Core reasoning + retrieval + planning service for the hackathon project",
-    version="0.1.0",
+app = FastAPI(title="FinX Orchestrator")
+
+SIM_MODE = os.environ.get("SIM_MODE", "true").lower() == "true"
+DB_URL = os.environ.get(
+    "DB_URL",
+    "postgresql://postgres:postgres@localhost:5432/postgres"
 )
 
-
-class SpendingBreakdown(BaseModel):
-    groceries: float = 0.0
-    dining: float = 0.0
-    gas: float = 0.0
-    travel: float = 0.0
-    other: Dict[str, float] = Field(default_factory=dict)
-
-
-class CreditCardInfo(BaseModel):
-    name: str
-
-
-class AnalyzeRequest(BaseModel):
-    salary: float
-    spending: SpendingBreakdown
-    credit_cards: List[CreditCardInfo]
-    financial_goals: List[str]
-
-
-class CardRecommendation(BaseModel):
-    category: str
-    recommended_card: str
-    rationale: str
-
-
-class BudgetCategory(BaseModel):
-    category: str
-    monthly_amount: float
-    percent_income: float
-
-
-class ActionItem(BaseModel):
-    title: str
-    detail: str
-
-
-class PlanResponse(BaseModel):
-    plan_id: str
-    budget_overview: List[BudgetCategory]
-    card_strategy: List[CardRecommendation]
-    action_items: List[ActionItem]
-    model_notes: str
-    retrieval_sources: List[Dict[str, Any]]
-
-
-def get_env(name: str, default: str = "") -> str:
-    return os.getenv(name, default)
-
-
-DB_URL = get_env("DB_URL", "postgresql://postgres:postgres@pg:5432/finx")
-SIM_MODE = get_env("SIM_MODE", "true").lower() == "true"
-NIM_LLM_URL = get_env("NIM_LLM_URL", "http://llm:8000")
-NIM_EMB_URL = get_env("NIM_EMB_URL", "http://emb:8000")
-TOP_K = int(get_env("TOP_K", "6"))
-REQUEST_TIMEOUT = int(get_env("REQUEST_TIMEOUT", "60"))
-
-
-def connect_db():
+def get_db_conn():
     return psycopg2.connect(DB_URL)
 
+def ensure_tables():
+    conn = get_db_conn()
+    cur = conn.cursor()
+    # documents table with pgvector column
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS documents (
+        id SERIAL PRIMARY KEY,
+        title TEXT,
+        body TEXT,
+        embedding vector(384)
+    );
+    """)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS plans (
+        id SERIAL PRIMARY KEY,
+        user_input JSONB,
+        plan_text TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
 
-def fetch_all_documents(conn):
-    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute("SELECT id, card, issuer, url, text, embedding FROM documents")
-        return cur.fetchall()
+ensure_tables()
 
+class SpendingModel(BaseModel):
+    __root__: Dict[str, float]
 
-def cosine_similarity(vec_a, vec_b):
-    # basic manual cosine sim
-    dot = sum(a*b for a,b in zip(vec_a, vec_b))
-    na = math.sqrt(sum(a*a for a in vec_a))
-    nb = math.sqrt(sum(b*b for b in vec_b))
-    if na == 0 or nb == 0:
-        return 0.0
-    return dot / (na * nb)
+    def total_spend(self) -> float:
+        return sum(self.__root__.values())
 
+class AnalyzeRequest(BaseModel):
+    salary: float = Field(..., description="Annual salary in USD")
+    spending: SpendingModel = Field(..., description="Monthly spend breakdown")
+    credit_cards: List[str] = Field(..., description="User's active cards")
+    financial_goals: List[str] = Field(..., description="Goals like 'pay off debt'")
 
-def retrieve_relevant_docs(query_text: str, conn):
-    """
-    When SIM_MODE:
-        fake a 'query embedding' via trivial hash trick and just return top docs by len(text).
-    When real mode:
-        call embedding NIM to embed query_text, then rank by cosine against stored embeddings.
-    """
-    docs = fetch_all_documents(conn)
+class AnalyzeResponse(BaseModel):
+    plan: str
+    debug: Dict[str, Any]
 
-    if SIM_MODE:
-        # dumb scoring heuristic: longer marketing text first
-        ranked = sorted(docs, key=lambda d: len(d["text"] or ""), reverse=True)
-        return ranked[:TOP_K]
+def fake_embed(text: str, dim: int = 384):
+    h = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    seed = int(h[:8], 16)
+    rnd = random.Random(seed)
+    return [rnd.random() for _ in range(dim)]
 
-    # real mode path: get query embedding from NIM emb model
-    try:
-        emb_resp = requests.post(
-            f"{NIM_EMB_URL}/v1/embeddings",
-            json={"model": "nv-embedqa-e5-v5", "input": [query_text]},
-            timeout=REQUEST_TIMEOUT,
-        )
-        emb_resp.raise_for_status()
-        query_vec = emb_resp.json()["data"][0]["embedding"]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Embedding request failed: {e}")
+def l2_distance(a, b):
+    s = 0.0
+    for x, y in zip(a, b):
+        diff = x - y
+        s += diff * diff
+    return math.sqrt(s)
 
-    # compute cosine sim locally
-    ranked = []
-    for d in docs:
-        if d["embedding"] is None:
-            continue
-        sim = cosine_similarity(query_vec, d["embedding"])
-        ranked.append((sim, d))
-    ranked.sort(key=lambda x: x[0], reverse=True)
-    return [d for _, d in ranked[:TOP_K]]
+def get_top_docs(user_query: str, k: int = 5):
+    q_vec = fake_embed(user_query)
 
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute("SELECT id, title, body FROM documents;")
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
 
-def build_prompt(request: AnalyzeRequest, retrieved_docs: List[Dict[str, Any]]) -> str:
-    doc_snippets = []
-    for d in retrieved_docs:
-        snippet = f"- {d['card']} ({d['issuer']}): {d['text']}"
-        doc_snippets.append(snippet)
+    scored = []
+    for r in rows:
+        doc_text = (r["title"] or "") + " " + (r["body"] or "")
+        d_vec = fake_embed(doc_text)
+        dist = l2_distance(q_vec, d_vec)
+        scored.append({
+            "id": r["id"],
+            "title": r["title"],
+            "body": r["body"],
+            "score": dist
+        })
+    scored.sort(key=lambda x: x["score"])
+    return scored[:k]
 
-    spending_lines = []
-    spending_lines.append(f"groceries: {request.spending.groceries}")
-    spending_lines.append(f"dining: {request.spending.dining}")
-    spending_lines.append(f"gas: {request.spending.gas}")
-    spending_lines.append(f"travel: {request.spending.travel}")
-    for k,v in request.spending.other.items():
-        spending_lines.append(f"{k}: {v}")
+def create_prompt(req: AnalyzeRequest, retrieved_docs):
+    perks_summary = "\n\n".join(
+        [f"- {d['title']}: {d['body'][:300]}..." for d in retrieved_docs]
+    )
+    spend_total = req.spending.total_spend()
+    goals_txt = ", ".join(req.financial_goals)
+    cards_txt = ", ".join(req.credit_cards)
 
-    credit_cards = [c.name for c in request.credit_cards]
+    prompt = f"""
+User financial snapshot:
+- Annual salary: ${req.salary:,.2f}
+- Monthly spend total: ${spend_total:,.2f}
+- Cards: {cards_txt}
+- Goals: {goals_txt}
 
-    prompt = f\"\"\"You are a personal finance optimization assistant.
-User salary (annual): {request.salary}
-User monthly spend (usd):
-{chr(10).join(spending_lines)}
+Relevant perks / promos / benefits:
+{perks_summary}
 
-User credit cards on hand:
-{credit_cards}
-
-User financial goals:
-{request.financial_goals}
-
-You also have reference info about card perks:
-{chr(10).join(doc_snippets)}
-
-TASK:
-1. Create monthly budget targets as % of net income.
-2. Recommend which existing card to use for each spend category.
-3. Give 3-5 concrete action steps (optimize rewards, reduce interest, etc.).
-4. Return clean JSON with these exact keys:
-   - budget_overview: array of {{category, monthly_amount, percent_income}}
-   - card_strategy: array of {{category, recommended_card, rationale}}
-   - action_items: array of {{title, detail}}
-   - model_notes: string
-   - retrieval_sources: array of {{card, issuer, url}}
-
-Keep it realistic and actionable, do not overspend.
-\"\"\"
+Task:
+Draft a 30/60/90 day plan to optimize spending, use card perks, and move toward the user's goals.
+Be concrete. Include dollar amounts or categories to cut, perks to activate, and first actions to take this week.
+""".strip()
     return prompt
 
-
-def call_llm(prompt: str) -> dict:
-    """
-    If SIM_MODE=True:
-        return deterministic stub so we can demo without GPU/NIM.
-    Otherwise:
-        call LLM NIM (llama-3.1-nemotron-nano-8B-v1) using /v1/chat/completions,
-        parse JSON from the response.
-    """
+def generate_plan(prompt: str) -> str:
     if SIM_MODE:
-        stub_json = {
-            "budget_overview": [
-                {
-                    "category": "groceries",
-                    "monthly_amount": 500,
-                    "percent_income": 10.0
-                },
-                {
-                    "category": "dining",
-                    "monthly_amount": 300,
-                    "percent_income": 6.0
-                },
-                {
-                    "category": "travel",
-                    "monthly_amount": 600,
-                    "percent_income": 12.0
-                }
-            ],
-            "card_strategy": [
-                {
-                    "category": "groceries",
-                    "recommended_card": "Amex Gold",
-                    "rationale": "4x points at U.S. supermarkets."
-                },
-                {
-                    "category": "dining",
-                    "recommended_card": "Amex Gold",
-                    "rationale": "4x points on dining worldwide."
-                },
-                {
-                    "category": "gas",
-                    "recommended_card": "Citi Custom Cash",
-                    "rationale": "Earns 5% back in top spend category."
-                }
-            ],
-            "action_items": [
-                {
-                    "title": "Pay high-interest balances first",
-                    "detail": "Focus extra cash on any card APR >20%."
-                },
-                {
-                    "title": "Automate savings goal",
-                    "detail": "Auto-transfer $400/mo to vacation fund."
-                },
-                {
-                    "title": "Use dining/grocery multipliers",
-                    "detail": "Always swipe Amex Gold at grocery & dining for max return."
-                }
-            ],
-            "model_notes": "SIM_MODE: using stubbed reasoning. In production this is from llama-3.1-nemotron-nano-8B-v1 via NVIDIA NIM.",
-            "retrieval_sources": []
-        }
-        return stub_json
-
-    # real call to LLM NIM
-    try:
-        payload = {
-            "model": "llama-3.1-nemotron-nano-8B-v1",
-            "messages": [
-                {"role": "system", "content": "You are a financial planning assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.2,
-            "max_tokens": 700,
-        }
-        resp = requests.post(
-            f"{NIM_LLM_URL}/v1/chat/completions",
-            json=payload,
-            timeout=REQUEST_TIMEOUT,
+        return (
+            "30-Day Plan:\n"
+            "1. Activate highest cashback card for groceries.\n"
+            "2. Cut $150/mo from non-essential subscriptions.\n"
+            "3. Move $300 into emergency fund.\n\n"
+            "60-Day Plan:\n"
+            "1. Use dining/travel multipliers on Amex Gold.\n"
+            "2. Redeem perks mentioned above.\n\n"
+            "90-Day Plan:\n"
+            "1. Pay down high-interest debt first ($200/mo extra).\n"
+            "2. Automate savings toward emergency fund.\n"
+            "3. Review card annual fees vs benefits.\n"
         )
-        resp.raise_for_status()
-        data = resp.json()
+    else:
+        # Placeholder for real LLM via NVIDIA NIM (GPU path).
+        # Since we don't have GPU quota in EKS, we keep SIM_MODE=true in prod.
+        return "Real LLM generation would go here."
 
-        # NIM LLM will return a completion with assistant message content.
-        # We expect that content to be valid JSON per our instructions.
-        content = data["choices"][0]["message"]["content"]
-        parsed = json.loads(content)
-        return parsed
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM request failed: {e}")
-
-
-def normalize_sources(retrieved_docs: List[Dict[str, Any]]):
-    out = []
-    for d in retrieved_docs:
-        out.append({
-            "card": d.get("card"),
-            "issuer": d.get("issuer"),
-            "url": d.get("url")
-        })
-    return out
-
-
-def persist_plan(plan_payload: dict, conn) -> str:
-    plan_id = str(uuid.uuid4())
-    with conn.cursor() as cur:
-        cur.execute(
-            "INSERT INTO plans (id, payload) VALUES (%s, %s)",
-            (plan_id, json.dumps(plan_payload)),
-        )
-        conn.commit()
+def persist_plan(req: AnalyzeRequest, plan_text: str):
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO plans (user_input, plan_text, created_at) VALUES (%s, %s, %s) RETURNING id;",
+        [
+            json.dumps(req.dict()),
+            plan_text,
+            datetime.datetime.utcnow(),
+        ],
+    )
+    plan_id = cur.fetchone()[0]
+    conn.commit()
+    cur.close()
+    conn.close()
     return plan_id
 
+@app.get("/healthz")
+def healthz():
+    return {"ok": True, "sim_mode": SIM_MODE}
 
-@app.post("/api/v1/analyze", response_model=PlanResponse)
+@app.post("/api/v1/analyze", response_model=AnalyzeResponse)
 def analyze(req: AnalyzeRequest):
-    """
-    Main endpoint the frontend will call.
-    """
-    # 1. connect DB
-    conn = connect_db()
+    try:
+        retrieved = get_top_docs(
+            user_query=" ".join(req.financial_goals + req.credit_cards)
+        )
+        prompt = create_prompt(req, retrieved)
+        plan_text = generate_plan(prompt)
+        plan_id = persist_plan(req, plan_text)
 
-    # 2. retrieval context
-    #    We'll prompt with "optimize my budget and card strategy"
-    retrieval_query = " ".join([
-        "optimize rewards",
-        "cash back categories",
-        "which card for groceries dining gas travel"
-    ])
-    retrieved_docs = retrieve_relevant_docs(retrieval_query, conn)
-
-    # 3. build prompt for LLM
-    prompt = build_prompt(req, retrieved_docs)
-
-    # 4. call LLM / or stub
-    llm_json = call_llm(prompt)
-
-    # 5. make sure we add retrieval_sources even if stub doesn't add them
-    if not llm_json.get("retrieval_sources"):
-        llm_json["retrieval_sources"] = normalize_sources(retrieved_docs)
-
-    # 6. persist
-    plan_id = persist_plan(llm_json, conn)
-
-    # 7. respond
-    return PlanResponse(
-        plan_id=plan_id,
-        budget_overview=[BudgetCategory(**b) for b in llm_json["budget_overview"]],
-        card_strategy=[CardRecommendation(**c) for c in llm_json["card_strategy"]],
-        action_items=[ActionItem(**a) for a in llm_json["action_items"]],
-        model_notes=llm_json.get("model_notes",""),
-        retrieval_sources=llm_json["retrieval_sources"],
-    )
+        return AnalyzeResponse(
+            plan=plan_text,
+            debug={
+                "plan_id": plan_id,
+                "sim_mode": SIM_MODE,
+                "retrieved_docs_count": len(retrieved),
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

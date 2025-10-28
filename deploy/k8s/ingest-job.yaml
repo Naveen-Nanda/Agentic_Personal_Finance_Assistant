@@ -1,45 +1,15 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: ingest-embeddings
+  name: ingest-job
   namespace: finance
 spec:
   template:
     spec:
-      nodeSelector:
-        node-type: cpu
       restartPolicy: Never
       containers:
-        - name: ingest
-          image: python:3.11-slim
-          command: ["python", "-c"]
-          args:
-            - |
-              import psycopg2, requests, json
-
-              DB="postgresql://postgres:postgres@pg.finance.svc.cluster.local:5432/finx"
-              EMB_URL="http://emb.finance.svc.cluster.local:8000"
-
-              conn = psycopg2.connect(DB)
-              cur = conn.cursor()
-              cur.execute("SELECT id,text FROM documents WHERE embedding IS NULL")
-              rows = cur.fetchall()
-              if not rows:
-                  print("No docs to embed"); exit(0)
-
-              texts=[t for _,t in rows]
-              r = requests.post(
-                EMB_URL + "/v1/embeddings",
-                json={"model":"nv-embedqa-e5-v5","input":texts},
-                timeout=60
-              )
-              r.raise_for_status()
-              vecs=[d["embedding"] for d in r.json()["data"]]
-
-              for (doc_id,_),v in zip(rows,vecs):
-                  cur.execute("UPDATE documents SET embedding=%s WHERE id=%s",(v,doc_id))
-
-              conn.commit()
-              cur.close()
-              conn.close()
-              print("Embedded",len(rows),"docs.")
+      - name: ingest
+        image: <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/finx-ingest:latest
+        env:
+        - name: DB_URL
+          value: "postgresql://postgres:postgres@pg.finance.svc.cluster.local:5432/postgres"

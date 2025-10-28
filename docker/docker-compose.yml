@@ -3,54 +3,31 @@ services:
   pg:
     image: pgvector/pgvector:pg16
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   orchestrator:
     build:
-      context: ..
-      dockerfile: orchestrator/Dockerfile
+      context: ../orchestrator
+      dockerfile: Dockerfile
     environment:
-      SIM_MODE: ${SIM_MODE}
-      DB_URL: ${DB_URL}
-      NIM_LLM_URL: ${NIM_LLM_URL}
-      NIM_EMB_URL: ${NIM_EMB_URL}
-      REQUEST_TIMEOUT: ${REQUEST_TIMEOUT}
-      TOP_K: ${TOP_K}
+      SIM_MODE: "true"
+      DB_URL: "postgresql://postgres:postgres@pg:5432/postgres"
     depends_on:
-      - pg
+      pg:
+        condition: service_healthy
     ports:
       - "5000:5000"
 
-  # GPU services (placeholders - only run when you have GPU runtime available)
-  llm:
-    image: nvcr.io/nim/llama-3.1-nemotron-nano-8b-v1:latest
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: ["gpu"]
-    ports:
-      - "8002:8000"
-
-  emb:
-    image: nvcr.io/nim/nv-embedqa-e5-v5:latest
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: ["gpu"]
-    ports:
-      - "8001:8000"
-
 volumes:
-  pgdata:
+  pg_data:
