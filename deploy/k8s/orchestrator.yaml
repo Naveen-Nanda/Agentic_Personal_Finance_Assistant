@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: orchestrator
-        image: <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/finx-orchestrator:latest
+        image: 825478277022.dkr.ecr.us-east-1.amazonaws.com/finx-orchestrator:latest
         imagePullPolicy: Always
         env:
         - name: SIM_MODE

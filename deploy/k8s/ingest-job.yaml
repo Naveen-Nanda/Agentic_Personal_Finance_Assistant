@@ -9,7 +9,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: ingest
-        image: <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/finx-ingest:latest
+        image: 825478277022.dkr.ecr.us-east-1.amazonaws.com/finx-ingest:latest
         env:
         - name: DB_URL
           value: "postgresql://postgres:postgres@pg.finance.svc.cluster.local:5432/postgres"
