@@ -1,0 +1,112 @@
+{
+    "purchasePlan": {
+        "items": [
+            {
+                "id": "1761781499376",
+                "purchaseItem": "Scotch",
+                "merchantName": "Ohio Liquors",
+                "merchantCode": "44333",
+                "merchantCategory": "Liquor",
+                "transactionAmount": 30
+            },
+            {
+                "id": "1761781532984",
+                "purchaseItem": "Chips",
+                "merchantName": "Trader Joes",
+                "merchantCode": "37373",
+                "merchantCategory": "Supermarket",
+                "transactionAmount": 10
+            }
+        ],
+        "totalAmount": 40,
+        "title": "Party Planning",
+        "description": "Test Description"
+    },
+    "availableCards": [
+        {
+            "id": "1761776919865",
+            "cardName": "Chase",
+            "customName": "Travel Card ",
+            "panNumber": "1234 1234 1234 1234",
+            "cardholderName": "Mani",
+            "expiryDate": "20/26",
+            "billingAddress": "2250 Par Ln, Apt 12, Willoughby, 44094",
+            "network": "unknown",
+            "creditLimit": 8888,
+            "annualFee": 12,
+            "rewardType": "cashback",
+            "rewardCategories": [],
+            "baseRewardRate": 1,
+            "signupBonus": "70000",
+            "foreignTransactionFee": 2,
+            "additionalBenefits": []
+        },
+        {
+            "id": "1761777064882",
+            "cardName": "Discover",
+            "customName": "Day to day",
+            "panNumber": "3333 3333 3333 3333",
+            "cardholderName": "Mani",
+            "expiryDate": "33/33",
+            "billingAddress": "2250 Par Ln, Apt 12, Willoughby, OH, 44094",
+            "network": "unknown",
+            "creditLimit": 12222,
+            "annualFee": 0,
+            "rewardType": "cashback",
+            "rewardCategories": [],
+            "baseRewardRate": 1,
+            "signupBonus": "2000",
+            "foreignTransactionFee": 0,
+            "additionalBenefits": []
+        },
+        {
+            "id": "1761780532637",
+            "cardName": "Amex",
+            "customName": "Shopping",
+            "panNumber": "1111 1111 1111 1111",
+            "cardholderName": "Mani",
+            "expiryDate": "11/11",
+            "billingAddress": "22,Plan St, Apt 21, Willoughby, OH, 44094",
+            "network": "unknown",
+            "creditLimit": 12000,
+            "annualFee": 12,
+            "rewardType": "cashback",
+            "rewardCategories": [
+                {
+                    "category": "Dining",
+                    "rewardRate": "5",
+                    "details": ""
+                },
+                {
+                    "category": "Rental Car",
+                    "rewardRate": "6",
+                    "details": "Only on Uber"
+                }
+            ],
+            "baseRewardRate": 3,
+            "signupBonus": "2000",
+            "foreignTransactionFee": 55,
+            "additionalBenefits": []
+        }
+    ],
+    "goals": [
+        {
+            "id": "1761777221905",
+            "title": "Save For Europe Trip",
+            "description": "Travel Europe for lesuire trip",
+            "startDate": "2025-10-29",
+            "endDate": "2025-10-29",
+            "createdAt": "2025-10-29T22:33:41.905Z",
+            "updatedAt": "2025-10-29T22:33:41.905Z"
+        },
+        {
+            "id": "1761780572915",
+            "title": "Saving Goal",
+            "description": "Save 100 dollars by the end date",
+            "startDate": "2025-10-29",
+            "endDate": "2025-10-29",
+            "createdAt": "2025-10-29T23:29:32.915Z",
+            "updatedAt": "2025-10-29T23:29:32.915Z"
+        }
+    ]
+}

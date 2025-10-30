@@ -1,0 +1,194 @@
+{
+    "itemRecommendations": {
+        "1761781499376": [
+            {
+                "card": {
+                    "id": "1761780532637",
+                    "cardName": "Amex",
+                    "customName": "Shopping",
+                    "panNumber": "1111 1111 1111 1111",
+                    "cardholderName": "Mani",
+                    "expiryDate": "11/11",
+                    "billingAddress": "22,Plan St, Apt 21, Willoughby, OH, 44094",
+                    "network": "unknown",
+                    "creditLimit": 12000,
+                    "annualFee": 12,
+                    "rewardType": "cashback",
+                    "rewardCategories": [
+                        {
+                            "category": "Dining",
+                            "rewardRate": "5",
+                            "details": ""
+                        },
+                        {
+                            "category": "Rental Car",
+                            "rewardRate": "6",
+                            "details": "Only on Uber"
+                        }
+                    ],
+                    "baseRewardRate": 3,
+                    "signupBonus": "2000",
+                    "foreignTransactionFee": 55,
+                    "additionalBenefits": []
+                },
+                "reason": "This card offers 3% base rewards",
+                "potentialRewards": {
+                    "type": "cashback",
+                    "amount": 0.9
+                },
+                "matchedCategories": [],
+                "itemId": "1761781499376"
+            },
+            {
+                "card": {
+                    "id": "1761776919865",
+                    "cardName": "Chase",
+                    "customName": "Travel Card ",
+                    "panNumber": "1234 1234 1234 1234",
+                    "cardholderName": "Mani",
+                    "expiryDate": "20/26",
+                    "billingAddress": "2250 Par Ln, Apt 12, Willoughby, 44094",
+                    "network": "unknown",
+                    "creditLimit": 8888,
+                    "annualFee": 12,
+                    "rewardType": "cashback",
+                    "rewardCategories": [],
+                    "baseRewardRate": 1,
+                    "signupBonus": "70000",
+                    "foreignTransactionFee": 2,
+                    "additionalBenefits": []
+                },
+                "reason": "This card offers 1% base rewards",
+                "potentialRewards": {
+                    "type": "cashback",
+                    "amount": 0.3
+                },
+                "matchedCategories": [],
+                "itemId": "1761781499376"
+            },
+            {
+                "card": {
+                    "id": "1761777064882",
+                    "cardName": "Discover",
+                    "customName": "Day to day",
+                    "panNumber": "3333 3333 3333 3333",
+                    "cardholderName": "Mani",
+                    "expiryDate": "33/33",
+                    "billingAddress": "2250 Par Ln, Apt 12, Willoughby, OH, 44094",
+                    "network": "unknown",
+                    "creditLimit": 12222,
+                    "annualFee": 0,
+                    "rewardType": "cashback",
+                    "rewardCategories": [],
+                    "baseRewardRate": 1,
+                    "signupBonus": "2000",
+                    "foreignTransactionFee": 0,
+                    "additionalBenefits": []
+                },
+                "reason": "This card offers 1% base rewards",
+                "potentialRewards": {
+                    "type": "cashback",
+                    "amount": 0.3
+                },
+                "matchedCategories": [],
+                "itemId": "1761781499376"
+            }
+        ],
+        "1761781532984": [
+            {
+                "card": {
+                    "id": "1761780532637",
+                    "cardName": "Amex",
+                    "customName": "Shopping",
+                    "panNumber": "1111 1111 1111 1111",
+                    "cardholderName": "Mani",
+                    "expiryDate": "11/11",
+                    "billingAddress": "22,Plan St, Apt 21, Willoughby, OH, 44094",
+                    "network": "unknown",
+                    "creditLimit": 12000,
+                    "annualFee": 12,
+                    "rewardType": "cashback",
+                    "rewardCategories": [
+                        {
+                            "category": "Dining",
+                            "rewardRate": "5",
+                            "details": ""
+                        },
+                        {
+                            "category": "Rental Car",
+                            "rewardRate": "6",
+                            "details": "Only on Uber"
+                        }
+                    ],
+                    "baseRewardRate": 3,
+                    "signupBonus": "2000",
+                    "foreignTransactionFee": 55,
+                    "additionalBenefits": []
+                },
+                "reason": "This card offers 3% base rewards",
+                "potentialRewards": {
+                    "type": "cashback",
+                    "amount": 0.3
+                },
+                "matchedCategories": [],
+                "itemId": "1761781532984"
+            },
+            {
+                "card": {
+                    "id": "1761776919865",
+                    "cardName": "Chase",
+                    "customName": "Travel Card ",
+                    "panNumber": "1234 1234 1234 1234",
+                    "cardholderName": "Mani",
+                    "expiryDate": "20/26",
+                    "billingAddress": "2250 Par Ln, Apt 12, Willoughby, 44094",
+                    "network": "unknown",
+                    "creditLimit": 8888,
+                    "annualFee": 12,
+                    "rewardType": "cashback",
+                    "rewardCategories": [],
+                    "baseRewardRate": 1,
+                    "signupBonus": "70000",
+                    "foreignTransactionFee": 2,
+                    "additionalBenefits": []
+                },
+                "reason": "This card offers 1% base rewards",
+                "potentialRewards": {
+                    "type": "cashback",
+                    "amount": 0.1
+                },
+                "matchedCategories": [],
+                "itemId": "1761781532984"
+            },
+            {
+                "card": {
+                    "id": "1761777064882",
+                    "cardName": "Discover",
+                    "customName": "Day to day",
+                    "panNumber": "3333 3333 3333 3333",
+                    "cardholderName": "Mani",
+                    "expiryDate": "33/33",
+                    "billingAddress": "2250 Par Ln, Apt 12, Willoughby, OH, 44094",
+                    "network": "unknown",
+                    "creditLimit": 12222,
+                    "annualFee": 0,
+                    "rewardType": "cashback",
+                    "rewardCategories": [],
+                    "baseRewardRate": 1,
+                    "signupBonus": "2000",
+                    "foreignTransactionFee": 0,
+                    "additionalBenefits": []
+                },
+                "reason": "This card offers 1% base rewards",
+                "potentialRewards": {
+                    "type": "cashback",
+                    "amount": 0.1
+                },
+                "matchedCategories": [],
+                "itemId": "1761781532984"
+            }
+        ]
+    },
+    "totalRewardsValue": 1.2,
+    "message": "Recommendations generated for each purchase item"
+}
