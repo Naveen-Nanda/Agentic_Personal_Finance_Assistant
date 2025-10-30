@@ -1,0 +1,59 @@
+{
+  "card-recommendations": [
+    {
+      "id": 1,
+      "cardId": "card1",
+      "score": 0.95,
+      "reasons": [
+        "High rewards rate for your spending category",
+        "Sign-up bonus aligns with your goals",
+        "Low annual fee compared to benefits"
+      ]
+    },
+    {
+      "id": 2,
+      "cardId": "card2",
+      "score": 0.85,
+      "reasons": [
+        "Good travel benefits matching your preferences",
+        "Complementary to your existing cards",
+        "Special financing options available"
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "id": "card1",
+      "name": "Premium Rewards Card",
+      "provider": "Example Bank",
+      "annualFee": 95,
+      "rewardsRate": {
+        "dining": 4,
+        "travel": 3,
+        "groceries": 2,
+        "other": 1
+      },
+      "signupBonus": {
+        "amount": 750,
+        "spendRequirement": 4000,
+        "timeframe": 3
+      }
+    },
+    {
+      "id": "card2",
+      "name": "Travel Elite Card",
+      "provider": "Global Bank",
+      "annualFee": 250,
+      "rewardsRate": {
+        "travel": 5,
+        "dining": 3,
+        "other": 1.5
+      },
+      "travelBenefits": [
+        "Airport lounge access",
+        "Global entry credit",
+        "Travel insurance"
+      ]
+    }
+  ]
+}
